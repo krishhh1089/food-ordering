@@ -14,7 +14,6 @@ from app.infrastructure.database.in_memory_order_repository import (
 
 
 router = APIRouter()
-
 repository = InMemoryOrderRepository()
 handler = CreateOrderHandler(repository)
 get_order_handler = GetOrderHandler(repository)
