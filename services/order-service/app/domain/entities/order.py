@@ -2,16 +2,7 @@ from enum import Enum
 from uuid import UUID
 
 from app.domain.entities.order_item import OrderItem
-
-
-class OrderStatus(Enum):
-
-    CREATED = "CREATED"
-    CONFIRMED = "CONFIRMED"
-    PREPARING = "PREPARING"
-    READY = "READY"
-    DELIVERED = "DELIVERED"
-    CANCELLED = "CANCELLED"
+from app.domain.entities.order_status import OrderStatus
 
 
 class Order:
@@ -71,4 +62,24 @@ class Order:
             )
 
         self.status = OrderStatus.CANCELLED
-        
+
+    @classmethod
+    def rehydrate(
+        cls,
+        order_id: UUID,
+        customer_id: UUID,
+        restaurant_id: UUID,
+        status: OrderStatus,
+        items: list[OrderItem],
+    ):
+        order = cls(
+            order_id=order_id,
+            customer_id=customer_id,
+            restaurant_id=restaurant_id,
+        )
+
+        order.status = status
+        order.items = items
+
+        return order
+    

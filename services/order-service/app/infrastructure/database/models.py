@@ -1,4 +1,4 @@
-from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -63,10 +63,10 @@ class OrderItemModel(Base):
     )
 
     price: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
+    Numeric(10, 2),
+    nullable=False,
     )
-
+    
     quantity: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

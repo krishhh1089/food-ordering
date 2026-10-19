@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from app.domain.entities.order_status import OrderStatus
 
 class OrderItem:
 
