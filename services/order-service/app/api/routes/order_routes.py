@@ -1,22 +1,21 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter,Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.application.queries.get_order import GetOrderQuery
 from app.application.handlers.get_order_handler import GetOrderHandler
 from app.application.commands.create_order import CreateOrderCommand
 from app.application.handlers.create_order_handler import CreateOrderHandler
 from app.domain.entities.order_item import OrderItem
-from app.infrastructure.database.in_memory_order_repository import (
-    InMemoryOrderRepository,
+from app.infrastructure.database.database import get_db
+from app.infrastructure.database.postgres_order_repository import (
+    PostgresOrderRepository,
 )
 
-
 router = APIRouter()
-repository = InMemoryOrderRepository()
-handler = CreateOrderHandler(repository)
-get_order_handler = GetOrderHandler(repository)
+
 
 
 class OrderItemRequest(BaseModel):
@@ -33,7 +32,8 @@ class CreateOrderRequest(BaseModel):
 
 
 @router.post("/orders")
-def create_order(request: CreateOrderRequest):
+def create_order(request: CreateOrderRequest,
+db: Session = Depends(get_db),):
 
     items = [
         OrderItem(
@@ -50,6 +50,10 @@ def create_order(request: CreateOrderRequest):
         restaurant_id=request.restaurant_id,
         items=items,
     )
+    repository = PostgresOrderRepository(db)
+    
+    handler = CreateOrderHandler(repository)
+
     order = handler.handle(command)
 
     return {
@@ -61,13 +65,17 @@ def create_order(request: CreateOrderRequest):
     }
 
 @router.get("/orders/{order_id}")
-def get_order(order_id: UUID):
+def get_order(order_id: UUID,
+    db: Session = Depends(get_db),):
 
-    query = GetOrderQuery(
-        order_id=order_id
-    )
+    repository = PostgresOrderRepository(db)
 
-    order = get_order_handler.handle(query)
+    handler = GetOrderHandler(repository)
+
+    query = GetOrderQuery(order_id=order_id)
+
+    order = handler.handle(query)
+
 
     if order is None:
         return {
