@@ -10,6 +10,9 @@ from app.application.commands.create_order import CreateOrderCommand
 from app.application.handlers.create_order_handler import CreateOrderHandler
 from app.domain.entities.order_item import OrderItem
 from app.infrastructure.database.database import get_db
+from app.application.handlers.confirm_order_handler import (
+    ConfirmOrderHandler,
+)
 from app.infrastructure.database.postgres_order_repository import (
     PostgresOrderRepository,
 )

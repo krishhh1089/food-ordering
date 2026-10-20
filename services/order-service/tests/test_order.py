@@ -6,13 +6,20 @@ from app.domain.entities.order_item import OrderItem
 from app.infrastructure.database.in_memory_order_repository import (
     InMemoryOrderRepository,
 )
-
+from app.infrastructure.messaging.in_memory_event_publisher import (
+    InMemoryEventPublisher,
+)
 
 def test_create_order():
 
     repository = InMemoryOrderRepository()
 
-    handler = CreateOrderHandler(repository)
+    event_publisher = InMemoryEventPublisher()
+
+    handler = CreateOrderHandler(
+        repository,
+        event_publisher,
+    )
 
     pizza = OrderItem(
         menu_item_id=uuid4(),
