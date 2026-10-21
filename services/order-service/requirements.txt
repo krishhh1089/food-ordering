@@ -1,0 +1,8 @@
+alembic
+fastapi
+kafka-python
+psycopg2-binary
+python-dotenv
+sqlalchemy
+uvicorn[standard]
+pytest
