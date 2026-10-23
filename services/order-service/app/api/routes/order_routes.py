@@ -1,23 +1,23 @@
 from uuid import UUID
 
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.application.queries.get_order import GetOrderQuery
-from app.application.handlers.get_order_handler import GetOrderHandler
 from app.application.commands.create_order import CreateOrderCommand
 from app.application.handlers.create_order_handler import CreateOrderHandler
+from app.application.handlers.get_order_handler import GetOrderHandler
+from app.application.queries.get_order import GetOrderQuery
 from app.domain.entities.order_item import OrderItem
 from app.infrastructure.database.database import get_db
 from app.infrastructure.database.postgres_order_repository import (
     PostgresOrderRepository,
 )
-from app.infrastructure.messaging.kafka_event_publisher import (
-    KafkaEventPublisher,
+from app.infrastructure.database.postgres_unit_of_work import (
+    PostgresUnitOfWork,
 )
-router = APIRouter()
 
+router = APIRouter()
 
 
 class OrderItemRequest(BaseModel):
@@ -34,8 +34,10 @@ class CreateOrderRequest(BaseModel):
 
 
 @router.post("/orders")
-def create_order(request: CreateOrderRequest,
-db: Session = Depends(get_db),):
+def create_order(
+    request: CreateOrderRequest,
+    db: Session = Depends(get_db),
+):
 
     items = [
         OrderItem(
@@ -52,13 +54,11 @@ db: Session = Depends(get_db),):
         restaurant_id=request.restaurant_id,
         items=items,
     )
-    repository = PostgresOrderRepository(db)
 
-    event_publisher = KafkaEventPublisher()
-    
+    unit_of_work = PostgresUnitOfWork(db)
+
     handler = CreateOrderHandler(
-        repository,
-        event_publisher,
+        unit_of_work,
     )
 
     order = handler.handle(command)
@@ -71,9 +71,12 @@ db: Session = Depends(get_db),):
         "total": order.total(),
     }
 
+
 @router.get("/orders/{order_id}")
-def get_order(order_id: UUID,
-    db: Session = Depends(get_db),):
+def get_order(
+    order_id: UUID,
+    db: Session = Depends(get_db),
+):
 
     repository = PostgresOrderRepository(db)
 
@@ -82,7 +85,6 @@ def get_order(order_id: UUID,
     query = GetOrderQuery(order_id=order_id)
 
     order = handler.handle(query)
-
 
     if order is None:
         return {

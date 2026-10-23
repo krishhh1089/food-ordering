@@ -1,20 +1,15 @@
 from uuid import uuid4
 
 from app.application.commands.create_order import CreateOrderCommand
-from app.domain.entities.order import Order
-from app.domain.repositories.order_repository import OrderRepository
 from app.application.events.order_created import OrderCreatedEvent
-from app.application.events.event_publisher import EventPublisher
+from app.application.unit_of_work import UnitOfWork
+from app.domain.entities.order import Order
+
 
 class CreateOrderHandler:
 
-    def __init__(
-    self,
-    repository: OrderRepository,
-    event_publisher: EventPublisher,
-):
-        self.repository = repository
-        self.event_publisher = event_publisher
+    def __init__(self, unit_of_work: UnitOfWork):
+        self.unit_of_work = unit_of_work
 
     def handle(self, command: CreateOrderCommand) -> Order:
 
@@ -27,8 +22,10 @@ class CreateOrderHandler:
         for item in command.items:
             order.add_item(item)
 
-        self.repository.save(order)
+        # Save order
+        self.unit_of_work.order_repository.save(order)
 
+        # Create domain/application event
         event = OrderCreatedEvent(
             order_id=order.order_id,
             customer_id=order.customer_id,
@@ -36,7 +33,15 @@ class CreateOrderHandler:
             total=order.total(),
         )
         
-        self.event_publisher.publish(event)
+        # Save event to outbox
+        self.unit_of_work.outbox_repository.add_order_created_event(
+            event
+        )
 
-        
+        try:
+            self.unit_of_work.commit()
+        except Exception:
+            self.unit_of_work.rollback()
+            raise
+
         return order

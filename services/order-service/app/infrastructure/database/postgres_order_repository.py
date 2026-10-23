@@ -36,7 +36,6 @@ class PostgresOrderRepository(OrderRepository):
 
         self.session.add(order_model)
 
-        self.session.commit()
 
     def find_by_id(self, order_id: UUID) -> Order | None:
 
