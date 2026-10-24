@@ -8,9 +8,6 @@ from app.application.handlers.process_order_created_handler import (
     ProcessOrderCreatedHandler,
 )
 from app.infrastructure.database.database import SessionLocal
-from app.infrastructure.database.postgres_payment_repository import (
-    PostgresPaymentRepository,
-)
 from app.infrastructure.database.postgres_unit_of_work import PostgresUnitOfWork
 
 
