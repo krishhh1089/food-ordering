@@ -13,3 +13,7 @@ class PaymentRepository(ABC):
     @abstractmethod
     def find_by_id(self, payment_id: UUID) -> Payment | None:
         pass
+
+    @abstractmethod
+    def find_by_order_id(self, order_id: UUID) -> Payment | None:
+        pass

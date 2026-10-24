@@ -42,3 +42,21 @@ class Payment:
             )
 
         self.status = PaymentStatus.REFUNDED
+
+    @classmethod
+    def rehydrate(
+        cls,
+        payment_id: UUID,
+        order_id: UUID,
+        amount: float,
+        status: PaymentStatus,
+    ):
+        payment = cls(
+            payment_id=payment_id,
+            order_id=order_id,
+            amount=amount,
+        )
+
+        payment.status = status
+
+        return payment

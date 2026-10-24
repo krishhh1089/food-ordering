@@ -4,6 +4,14 @@ from uuid import UUID
 from kafka import KafkaConsumer
 
 from app.application.events.order_created import OrderCreatedEvent
+from app.application.handlers.process_order_created_handler import (
+    ProcessOrderCreatedHandler,
+)
+from app.infrastructure.database.database import SessionLocal
+from app.infrastructure.database.postgres_payment_repository import (
+    PostgresPaymentRepository,
+)
+from app.infrastructure.database.postgres_unit_of_work import PostgresUnitOfWork
 
 
 consumer = KafkaConsumer(
@@ -18,6 +26,7 @@ print("Payment Service Kafka consumer started...")
 
 
 for message in consumer:
+
     data = message.value
 
     event = OrderCreatedEvent(
@@ -27,6 +36,23 @@ for message in consumer:
         total=data["total"],
     )
 
-    print("Payment Service received OrderCreated")
-    print(f"Order ID: {event.order_id}")
-    print(f"Amount to pay: {event.total}")
+    session = SessionLocal()
+
+    try:
+        unit_of_work = PostgresUnitOfWork(session)
+        handler = ProcessOrderCreatedHandler(unit_of_work)
+
+        payment = handler.handle(event)
+
+        print("Payment created/received")
+        print(f"Payment ID: {payment.payment_id}")
+        print(f"Order ID: {payment.order_id}")
+        print(f"Amount: {payment.amount}")
+        print(f"Status: {payment.status.value}")
+
+    except Exception:
+        session.rollback()
+        raise
+
+    finally:
+        session.close()

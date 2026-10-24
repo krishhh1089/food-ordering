@@ -40,3 +40,15 @@ class OutboxPublisher:
             event.published_at = datetime.now(timezone.utc)
 
         self.session.commit()
+        
+from app.infrastructure.database.database import SessionLocal
+
+
+if __name__ == "__main__":
+    session = SessionLocal()
+
+    try:
+        publisher = OutboxPublisher(session)
+        publisher.publish_pending_events()
+    finally:
+        session.close()
