@@ -1,35 +1,53 @@
-# Food Ordering Services
+﻿# Food Ordering
 
-A small food-ordering project with an order API and a payment-service Kafka
-consumer. The order service stores orders in PostgreSQL and publishes an
-`order-created` event; the payment service currently consumes and logs that
-event.
+This repository contains a small event-driven food ordering system built with
+Python services. The order service exposes a FastAPI API, persists orders in
+PostgreSQL, and publishes an `order-created` event to Kafka. The payment service
+listens for that event and processes it.
 
-## Services
+## Architecture
 
-- **Order service** — FastAPI API for creating and retrieving orders.
-- **Payment service** — Kafka consumer for `order-created` events. Payment
-  persistence and processing are not implemented yet.
-- **Infrastructure** — Docker Compose starts PostgreSQL and Kafka.
+- Order service: FastAPI API for creating and retrieving orders.
+- Payment service: Kafka consumer that handles `order-created` events.
+- PostgreSQL: stores order and payment data.
+- Kafka: event broker for asynchronous communication between services.
+- Docker Compose: launches the infrastructure dependencies.
 
-## Requirements
+## Repository structure
 
-- Python 3.10 or newer
+```text
+.
+├── docker-compose.yml
+├── infrastructure/
+├── k8s/
+├── services/
+│   ├── order-service/
+│   └── payment-service/
+└── README.md
+```
+
+## Prerequisites
+
+- Python 3.10+
 - Docker Compose
+- PowerShell (recommended for Windows setup)
 
 ## Start infrastructure
 
-From the repository root:
+From the repository root, start PostgreSQL and Kafka:
 
 ```powershell
 docker compose up -d
 ```
 
-This starts PostgreSQL on `localhost:5432` and Kafka on `localhost:9092`.
+The services will be available at:
+
+- PostgreSQL: `localhost:5432`
+- Kafka: `localhost:9092`
 
 ## Run the order service
 
-In a PowerShell terminal:
+Open a PowerShell terminal and run:
 
 ```powershell
 cd services\order-service
@@ -41,15 +59,17 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-The API is available at `http://127.0.0.1:8000`; interactive API documentation
-is at `http://127.0.0.1:8000/docs`.
+Once the service is running:
+
+- API base URL: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
 
 ### API
 
-- `POST /orders` — create an order.
-- `GET /orders/{order_id}` — retrieve an order by UUID.
+- `POST /orders` — create a new order.
+- `GET /orders/{order_id}` — fetch an order by UUID.
 
-Example request body for `POST /orders`:
+Example payload for `POST /orders`:
 
 ```json
 {
@@ -66,9 +86,9 @@ Example request body for `POST /orders`:
 }
 ```
 
-## Run the payment consumer
+## Run the payment service
 
-In another PowerShell terminal, with Kafka running:
+Open a second PowerShell terminal and run:
 
 ```powershell
 cd services\payment-service
@@ -78,13 +98,21 @@ python -m pip install -r requirements.txt
 python -m app.infrastructure.messaging.kafka_event_consumer
 ```
 
-The consumer listens to the `order-created` topic. Create an order while it is
-running to see the event logged.
+The consumer listens to the `order-created` topic. When you create an order via
+the API, the event will be published to Kafka and processed by the payment
+service.
 
-## Run order-service tests
+## Run tests
 
-From `services\order-service`, activate its virtual environment and run:
+From `services\order-service`:
 
 ```powershell
 python -m pytest
 ```
+
+## Notes
+
+This project is a lightweight example of a microservice architecture. The order
+service is the main API entry point, while Kafka is used for async event-driven
+communication between services.
+
